@@ -2,7 +2,6 @@ import numpy as np
 from newris import RISenv
 from gym import spaces
 from collections import deque
-import random as rand
 import os
 from stable_baselines3 import PPO
 import time
@@ -39,9 +38,7 @@ class CustomTensorboardCallback(BaseCallback):
 
 callback = CustomTensorboardCallback()
 
-model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"PPO", callback=callback)
 
-model.save(f"{models_dir}/ppo_ris_model")
 
 trained_model = PPO.load(f"{models_dir}/ppo_ris_model")
 
@@ -49,6 +46,6 @@ obs = env.reset()
 for _ in range(100):  
     action, _ = trained_model.predict(obs)
     obs, reward, done, info = env.step(action)
-    env.render()  
-    if done:
-        obs = env.reset()
+    model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"PPO", callback=callback)
+
+    model.save(f"{models_dir}/ppo_ris_model")
