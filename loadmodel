@@ -1,45 +1,54 @@
-from stable_baselines3 import PPO, A2C
-import os
+import numpy as np
 from newris import RISenv
+from gym import spaces
+from collections import deque
+import random as rand
+import os
+from stable_baselines3 import PPO
 import time
 from stable_baselines3.common.callbacks import BaseCallback
 
-class CustomTensorboardCallback(BaseCallback):
-    def __init__(self, verbose=1):
-        super(CustomTensorboardCallback, self).__init__(verbose)
-
-    def _on_step(self) -> bool:
-        # Access the environment's episode length and cumulative reward
-        ep_length = self.training_env.envs[0].ep_length
-        ep_reward = self.training_env.envs[0].ep_reward
-
-        # Log the episode length and reward to TensorBoard
-        self.logger.record('rollout/ep_len_mean', ep_length)
-        self.logger.record('rollout/ep_rew_mean', ep_reward)
-
-        return True
 
 models_dir = f"models/{int(time.time())}/"
 logdir = f"logs/{int(time.time())}/"
 
 if not os.path.exists(models_dir): #saves model directory
-	os.makedirs(models_dir)
+    os.makedirs(models_dir)
 
 if not os.path.exists(logdir):
-	os.makedirs(logdir)
+    os.makedirs(logdir)
 
 env = RISenv()
 env.reset()
 
 model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
 
-TIMESTEPS = 10
-iters = 0
+TIMESTEPS = 1000
+
+class CustomTensorboardCallback(BaseCallback):
+    def __init__(self, verbose=1):
+        super(CustomTensorboardCallback, self).__init__(verbose)
+
+    def _on_step(self) -> bool: #logging within tensorboard
+        ep_length = self.training_env.envs[0].ep_length
+        ep_reward = self.training_env.envs[0].ep_reward
+        self.logger.record('rollout/ep_len_mean', ep_length)
+        self.logger.record('rollout/ep_rew_mean', ep_reward)
+
+        return True
 
 callback = CustomTensorboardCallback()
 
-while True:
-    iters += 1
+model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"PPO", callback=callback)
 
-    model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"PPO", callback=callback)
-    model.save(f"{models_dir}/{TIMESTEPS*iters}")
+model.save(f"{models_dir}/ppo_ris_model")
+
+trained_model = PPO.load(f"{models_dir}/ppo_ris_model")
+
+obs = env.reset()
+for _ in range(100):  
+    action, _ = trained_model.predict(obs)
+    obs, reward, done, info = env.step(action)
+    env.render()  
+    if done:
+        obs = env.reset()
