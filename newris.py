@@ -35,7 +35,7 @@ class RISenv(gym.Env):
 
 
     def calculate_angle1(self, unit_cell):
-        vector = self.transmitter - unit_cell #🤔check
+        vector = self.transmitter - unit_cell #check
         azimuth = np.arctan2(vector[1], vector[0])
         distance_xy = np.linalg.norm(vector[:2])
         elevation = np.arctan2(vector[2], distance_xy)
@@ -121,13 +121,11 @@ class RISenv(gym.Env):
                 print([(x, y), unit_cell, action[x * self.N + y], self.reward])
                 #-------------------------------------
 
-                # No need to concatenate, just append the observation to the list
                 unit_cell = np.array([x, y, 0])
                 azimuth1, elevation1, distance1 = self.calculate_angle1(unit_cell)
                 azimuth2, elevation2, distance2 = self.calculate_angle2(unit_cell)
                 observation = [x, y, azimuth1, elevation1, distance1, azimuth2, elevation2, distance2, self.M, self.N, *self.transmitter, *self.receiver, self.F_combined(unit_cell)]
                 self.observation[x * self.N + y] = observation
-    # Return the observations as a list of arrays
         return self.observation, self.reward, self.done, info
 
 
@@ -191,23 +189,16 @@ callback = CustomTensorboardCallback()
 while True:
     iters += 1
 
-    # Reset the environment at the beginning of each iteration
     obs = env.reset()
 
-    # Collect actions for each unit cell in a list
     actions = []
 
     for _ in range(TIMESTEPS):
-        # Predict the action for the current observation using the model's policy
         action, _ = model.predict(obs)
-
-        # Add the action to the list of actions
         actions.append(action)
 
-        # Take the predicted action in the environment
         obs, _, _, _ = env.step(action)
 
-    # Convert the list of actions to a numpy array
     actions = np.array(actions)
 
     model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"PPO", callback=callback)
