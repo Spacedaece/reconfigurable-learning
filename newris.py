@@ -4,7 +4,7 @@ import scipy
 import gym
 from gym import spaces
 from collections import deque
-import random as rand # maybe do random recievers/transmitters?
+import random as rand # maybe?
 
 class RISenv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -147,7 +147,7 @@ class RISenv(gym.Env):
     def render(self, mode='human'):
         pass
 
-#----------------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------------
 from stable_baselines3 import PPO, A2C
 import os
 from newris import RISenv
@@ -190,24 +190,13 @@ callback = CustomTensorboardCallback()
 
 while True:
     iters += 1
-
-    # Reset the environment at the beginning of each iteration
     obs = env.reset()
-
-    # Collect actions for each unit cell in a list
     actions = []
 
     for _ in range(TIMESTEPS):
-        # Predict the action for the current observation using the model's policy
         action, _ = model.predict(obs)
-
-        # Add the action to the list of actions
         actions.append(action)
-
-        # Take the predicted action in the environment
         obs, _, _, _ = env.step(action)
-
-    # Convert the list of actions to a numpy array
     actions = np.array(actions)
 
     model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"PPO", callback=callback)
