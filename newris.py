@@ -4,7 +4,7 @@ import scipy
 import gym
 from gym import spaces
 from collections import deque
-import random as rand # maybe?
+import random as rand # maybe do random recievers/transmitters?
 
 class RISenv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -18,7 +18,7 @@ class RISenv(gym.Env):
         self.reward_scale = 10**(1) # Scaling factor for reward
         self.ep_length = 0
         self.ep_reward = 0
-        self.total_reward = 0
+        self.reward = 0
         self.gamma_value = 1
         self.M = 10 #m rows
         self.N = 10 #n columns
@@ -94,7 +94,7 @@ class RISenv(gym.Env):
                 if np.isnan(action[x*self.N +y]):
                     self.gamma_value = math.pi
                 else:
-                    self.gamma_value = abs(self.Γ) * (math.e**(self.j * action))
+                    self.gamma_value = abs(self.Γ) * (math.e**(self.j * action[x * self.N + y]))
                 M = 2 - 2 * self.M
                 N = 2 - 2 * self.N
                 sigma = 0
@@ -118,8 +118,7 @@ class RISenv(gym.Env):
                 self.ep_reward += self.reward
                 self.done = False
                 info = {}        
-                self.total_reward += self.reward
-                print([(x, y), unit_cell, self.action, self.reward])
+                print([(x, y), unit_cell, action[x * self.N + y], self.reward])
                 #-------------------------------------
 
                 # No need to concatenate, just append the observation to the list
@@ -134,6 +133,7 @@ class RISenv(gym.Env):
 
 
     def reset(self):
+        self.reward = 0
         self.observation = np.zeros((self.M * self.N, 17))  # Initialize a NumPy array to store the observations
         for x in range(self.M):
             for y in range(self.N):
@@ -147,7 +147,7 @@ class RISenv(gym.Env):
     def render(self, mode='human'):
         pass
 
-# ----------------------------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------------------------
 from stable_baselines3 import PPO, A2C
 import os
 from newris import RISenv
@@ -183,20 +183,31 @@ env.reset()
 
 model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
 
-TIMESTEPS = 100
+TIMESTEPS = 10
 iters = 0
 
 callback = CustomTensorboardCallback()
 
 while True:
     iters += 1
+
+    # Reset the environment at the beginning of each iteration
     obs = env.reset()
+
+    # Collect actions for each unit cell in a list
     actions = []
 
     for _ in range(TIMESTEPS):
+        # Predict the action for the current observation using the model's policy
         action, _ = model.predict(obs)
+
+        # Add the action to the list of actions
         actions.append(action)
+
+        # Take the predicted action in the environment
         obs, _, _, _ = env.step(action)
+
+    # Convert the list of actions to a numpy array
     actions = np.array(actions)
 
     model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"PPO", callback=callback)
