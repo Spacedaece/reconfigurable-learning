@@ -145,8 +145,7 @@ class RISenv(gym.Env):
     def render(self, mode='human'):
         pass
 
-#----------------------------------------------------------------------------------------------------------------------------------
-from stable_baselines3 import PPO, A2C
+"""from stable_baselines3 import PPO, A2C
 import os
 from newris import RISenv
 import time
@@ -202,6 +201,6 @@ while True:
     actions = np.array(actions)
 
     model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, tb_log_name=f"PPO", callback=callback)
-    model.save(f"{models_dir}/{TIMESTEPS*iters}")
+    model.save(f"{models_dir}/{TIMESTEPS*iters}")"""
 
 
